@@ -28,7 +28,6 @@ import matplotlib
 
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.patches import Rectangle
 from matplotlib.ticker import FuncFormatter
@@ -228,6 +227,24 @@ class CurrentRangerApp:
         style.configure("Status.TLabel", background=GRID_COLOR, foreground=FG_COLOR,
                          font=("SF Mono", 10))
 
+        # macOS menu bar
+        menubar = tk.Menu(self.root)
+        app_menu = tk.Menu(menubar, name="apple", tearoff=0)
+        app_menu.add_command(label="About CurrentRanger Monitor",
+                             command=lambda: messagebox.showinfo(
+                                 "About", "CurrentRanger Monitor\n\nhttps://sasq.io"))
+        menubar.add_cascade(menu=app_menu)
+
+        file_menu = tk.Menu(menubar, tearoff=0)
+        file_menu.add_command(label="Export CSV\u2026",
+                              command=self._export_csv)
+        file_menu.add_separator()
+        file_menu.add_command(label="Quit", command=self.on_close,
+                              accelerator="Command+Q")
+        menubar.add_cascade(label="File", menu=file_menu)
+
+        self.root.config(menu=menubar)
+
         # Top toolbar
         toolbar = ttk.Frame(self.root, style="Dark.TFrame")
         toolbar.pack(fill=tk.X, padx=8, pady=(8, 4))
@@ -360,22 +377,24 @@ class CurrentRangerApp:
         self.canvas.mpl_connect("motion_notify_event", self._on_mouse_move)
         self.canvas.mpl_connect("scroll_event", self._on_scroll)
 
-        # Initial draw to realize the canvas before FuncAnimation starts
         self.canvas.draw()
+        self._schedule_update()
 
-        # FuncAnimation drives the plot updates — it owns the draw cycle,
-        # so we never call draw()/draw_idle() from the update path.
-        self._anim = FuncAnimation(self.fig, self._animate,
-                                   interval=UPDATE_INTERVAL_MS, cache_frame_data=False)
+    def _schedule_update(self):
+        self.root.after(UPDATE_INTERVAL_MS, self._update_plot)
 
-    def _animate(self, _frame):
-        """Called by FuncAnimation every UPDATE_INTERVAL_MS. Returns updated artists."""
+    def _update_plot(self):
         try:
-            return self._do_animate()
+            self._do_animate()
+            # Use synchronous draw() instead of draw_idle(). draw_idle()
+            # schedules a deferred after_idle callback whose execution can
+            # collide with Cocoa menu tracking on macOS, freezing the UI.
+            # Synchronous draw completes entirely within this after() callback.
+            self.canvas.draw()
         except Exception as e:
             traceback.print_exc()
             self.status_text.set(f"Update error: {e}")
-            return []
+        self._schedule_update()
 
     def _do_animate(self):
         if not (self.reader and self.reader.running):
@@ -765,6 +784,11 @@ def main():
     root = tk.Tk()
     app = CurrentRangerApp(root, initial_port=args.port)
     root.protocol("WM_DELETE_WINDOW", app.on_close)
+
+    try:
+        root.createcommand("tk::mac::Quit", app.on_close)
+    except Exception:
+        pass
 
     try:
         root.lift()

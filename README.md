@@ -6,6 +6,7 @@ Connects over USB serial, parses the CurrentRanger's scientific notation output,
 
 <img width="1196" height="813" alt="image" src="https://github.com/user-attachments/assets/4f0720e0-f1db-4f39-af8b-4550e515cac5" />
 
+<img width="1190" height="812" alt="image" src="https://github.com/user-attachments/assets/06385c00-1189-4063-b0cc-762d8700d793" />
 
 
 ## Features

@@ -13,7 +13,7 @@ Connects over USB serial, parses the CurrentRanger's scientific notation output,
 - Scroll to zoom, pause to inspect
 - Adjustable time window (5s, 10s, 30s, 60s, 5m, all)
 - Linear / log scale toggle
-- Record and export to CSV
+- Export to CSV (full buffer, or just the selected region)
 - Min/max envelope downsampling for smooth rendering of large datasets
 
 ## Requirements

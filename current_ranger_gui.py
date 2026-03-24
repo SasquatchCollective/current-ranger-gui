@@ -180,8 +180,6 @@ class CurrentRangerApp:
         self.root.minsize(900, 600)
 
         self.reader: SerialReader | None = None
-        self.recording = False
-        self.record_data: list[tuple[float, float]] = []
         self.time_window = 30.0  # seconds of visible data
         self.log_scale = False
         self.paused = False
@@ -266,10 +264,6 @@ class CurrentRangerApp:
         self.pause_btn = ttk.Button(toolbar, text="Pause", style="Dark.TButton",
                                      command=self._toggle_pause)
         self.pause_btn.pack(side=tk.LEFT, padx=2)
-
-        self.record_btn = ttk.Button(toolbar, text="Record", style="Dark.TButton",
-                                      command=self._toggle_record)
-        self.record_btn.pack(side=tk.LEFT, padx=2)
 
         ttk.Button(toolbar, text="Export CSV", style="Dark.TButton",
                    command=self._export_csv).pack(side=tk.LEFT, padx=2)
@@ -398,12 +392,6 @@ class CurrentRangerApp:
                 self.status_text.set(f"Error: {self.reader.error}")
                 self._disconnect()
             return []
-
-        # Recording (always, even when paused)
-        if self.recording:
-            existing = len(self.record_data)
-            for i in range(existing, len(ts)):
-                self.record_data.append((ts[i], cur[i]))
 
         if self.paused:
             return self._render_paused()
@@ -732,17 +720,6 @@ class CurrentRangerApp:
             self._paused_ts = None
             self._paused_cur = None
 
-    def _toggle_record(self):
-        if not self.recording:
-            self.record_data.clear()
-            self.recording = True
-            self.record_btn.configure(text="Stop Rec")
-            self.status_text.set("Recording...")
-        else:
-            self.recording = False
-            self.record_btn.configure(text="Record")
-            self.status_text.set(f"Stopped recording ({len(self.record_data)} samples)")
-
     def _clear_data(self):
         if self.reader:
             with self.reader.lock:
@@ -755,17 +732,22 @@ class CurrentRangerApp:
         self.stat_samples.set("0")
 
     def _export_csv(self):
-        if self.reader:
-            ts, cur = self.reader.get_snapshot()
-        elif self.record_data:
-            ts = [r[0] for r in self.record_data]
-            cur = [r[1] for r in self.record_data]
-        else:
+        if not self.reader:
             messagebox.showinfo("Export", "No data to export")
             return
+        ts, cur = self.reader.get_snapshot()
         if not ts:
             messagebox.showinfo("Export", "No data to export")
             return
+
+        # If a selection is active, export only the selected region
+        if self._sel_abs_t0 is not None and self._sel_abs_t1 is not None:
+            t0_sel, t1_sel = self._sel_abs_t0, self._sel_abs_t1
+            paired = [(t, c) for t, c in zip(ts, cur) if t0_sel <= t <= t1_sel]
+            if not paired:
+                messagebox.showinfo("Export", "No samples in selection")
+                return
+            ts, cur = zip(*paired)
 
         filename = filedialog.asksaveasfilename(
             defaultextension=".csv",

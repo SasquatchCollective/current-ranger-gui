@@ -232,7 +232,9 @@ class CurrentRangerApp:
         app_menu = tk.Menu(menubar, name="apple", tearoff=0)
         app_menu.add_command(label="About CurrentRanger Monitor",
                              command=lambda: messagebox.showinfo(
-                                 "About", "CurrentRanger Monitor\n\nhttps://sasq.io"))
+                                 "About", "CurrentRanger Monitor\n"
+                                 "The Sasquatch Collective LLC\n"
+                                 "https://sasq.io"))
         menubar.add_cascade(menu=app_menu)
 
         file_menu = tk.Menu(menubar, tearoff=0)

@@ -181,7 +181,6 @@ class CurrentRangerApp:
 
         self.reader: SerialReader | None = None
         self.time_window = 30.0  # seconds of visible data
-        self.log_scale = False
         self.paused = False
         self._paused_ts = None   # snapshot of visible timestamps when paused
         self._paused_cur = None  # snapshot of visible currents when paused
@@ -256,10 +255,6 @@ class CurrentRangerApp:
                                           state="readonly", style="Dark.TCombobox")
         self.window_combo.pack(side=tk.LEFT, padx=(0, 8))
         self.window_combo.bind("<<ComboboxSelected>>", self._on_window_change)
-
-        self.log_btn = ttk.Button(toolbar, text="Log Scale", style="Dark.TButton",
-                                   command=self._toggle_log)
-        self.log_btn.pack(side=tk.LEFT, padx=2)
 
         self.pause_btn = ttk.Button(toolbar, text="Pause", style="Dark.TButton",
                                      command=self._toggle_pause)
@@ -443,13 +438,6 @@ class CurrentRangerApp:
         if margin == 0:
             margin = abs(peak_val) * 0.1 or 1e-6
         self.ax.set_ylim(min_val - margin, peak_val + margin)
-
-        if self.log_scale:
-            self.ax.set_yscale("log")
-        else:
-            self.ax.set_yscale("linear")
-        # set_yscale resets the formatter — reapply every frame
-        self.ax.yaxis.set_major_formatter(FuncFormatter(smart_axis_formatter))
 
         # Update live selection
         if self._sel_abs_t0 is not None and self._sel_abs_t1 is not None:
@@ -696,10 +684,6 @@ class CurrentRangerApp:
         if self.paused:
             self._toggle_pause()
         self._clear_selection_stats()
-
-    def _toggle_log(self):
-        self.log_scale = not self.log_scale
-        self.log_btn.configure(text="Linear" if self.log_scale else "Log Scale")
 
     def _toggle_pause(self):
         self.paused = not self.paused

@@ -4,7 +4,8 @@ Real-time current monitoring GUI for the [LowPowerLab CurrentRanger](https://low
 
 Connects over USB serial, parses the CurrentRanger's scientific notation output, and plots current draw in real time with a dark-themed Tk/Matplotlib interface.
 
-<img width="1202" height="814" alt="image" src="https://github.com/user-attachments/assets/33a3a701-fc69-4262-8631-ef210daa4306" />
+<img width="1196" height="813" alt="image" src="https://github.com/user-attachments/assets/4f0720e0-f1db-4f39-af8b-4550e515cac5" />
+
 
 
 ## Features
